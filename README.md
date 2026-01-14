@@ -94,9 +94,26 @@ Then add to Claude Desktop config using the local path or by specifying credenti
 
 **Option 3: Docker Installation**
 
-**Using JSON environment variable (recommended):**
+**Using pre-built image from GitHub Container Registry (recommended):**
 ```bash
-git clone https://github.com/nspady/google-calendar-mcp.git
+# Pull the latest image
+docker pull ghcr.io/nmirabets/google-calendar-mcp:latest
+
+# Run with JSON credentials
+docker run -d \
+  --name calendar-mcp \
+  --env GOOGLE_OAUTH_CREDENTIALS_JSON='{"installed":{"client_id":"your-id","client_secret":"your-secret","redirect_uris":["http://localhost:3500/oauth2callback"]}}' \
+  -p 3000:3000 -p 3500:3500 \
+  -v calendar-tokens:/home/nodejs/.config/google-calendar-mcp \
+  ghcr.io/nmirabets/google-calendar-mcp:latest
+
+# Authenticate
+docker exec -it calendar-mcp npm run auth
+```
+
+**Using local build:**
+```bash
+git clone https://github.com/nmirabets/google-calendar-mcp.git
 cd google-calendar-mcp
 
 # Add credentials to .env file
@@ -107,15 +124,7 @@ echo 'GOOGLE_OAUTH_CREDENTIALS_JSON={"installed":{"client_id":"your-id","client_
 docker compose up
 ```
 
-**Using file mount (traditional):**
-```bash
-git clone https://github.com/nspady/google-calendar-mcp.git
-cd google-calendar-mcp
-cp /path/to/your/gcp-oauth.keys.json .
-docker compose up
-```
-
-See the [Docker deployment guide](docs/docker.md) for detailed configuration options including HTTP transport mode.
+See the [Docker deployment guide](docs/docker.md) for detailed configuration options and the [Docker Registry guide](docs/docker-registry.md) for using pre-built images.
 
 ### First Run
 
