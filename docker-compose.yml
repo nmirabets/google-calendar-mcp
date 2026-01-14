@@ -11,6 +11,14 @@ services:
     env_file: .env
 
     # OAuth credentials and token storage
+    # 
+    # Option 1: Use JSON environment variable (recommended)
+    #   Set GOOGLE_OAUTH_CREDENTIALS_JSON in your .env file with the JSON content:
+    #   GOOGLE_OAUTH_CREDENTIALS_JSON='{"installed":{"client_id":"...","client_secret":"...","redirect_uris":["..."]}}'
+    #   Then comment out the gcp-oauth.keys.json volume mount below
+    #
+    # Option 2: Use file mount (traditional)
+    #   Keep the gcp-oauth.keys.json volume mount below (default)
     volumes:
       - ./gcp-oauth.keys.json:/app/gcp-oauth.keys.json:ro
       - calendar-tokens:/home/nodejs/.config/google-calendar-mcp

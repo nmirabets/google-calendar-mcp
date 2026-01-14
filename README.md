@@ -46,6 +46,10 @@ Add to your Claude Desktop configuration:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+You can provide credentials using either a file path or JSON string:
+
+**Using file path:**
 ```json
 {
   "mcpServers": {
@@ -60,7 +64,22 @@ Add to your Claude Desktop configuration:
 }
 ```
 
-**⚠️ Important Note for npx Users**: When using npx, you **must** specify the credentials file path using the `GOOGLE_OAUTH_CREDENTIALS` environment variable.
+**Using JSON string (recommended for CI/CD and secrets management):**
+```json
+{
+  "mcpServers": {
+    "google-calendar": {
+      "command": "npx",
+      "args": ["@cocal/google-calendar-mcp"],
+      "env": {
+        "GOOGLE_OAUTH_CREDENTIALS_JSON": "{\"installed\":{\"client_id\":\"your-client-id\",\"client_secret\":\"your-secret\",\"redirect_uris\":[\"http://localhost:3500/oauth2callback\"]}}"
+      }
+    }
+  }
+}
+```
+
+**⚠️ Important Note for npx Users**: When using npx, you **must** specify credentials using either the `GOOGLE_OAUTH_CREDENTIALS` (file path) or `GOOGLE_OAUTH_CREDENTIALS_JSON` (JSON string) environment variable.
 
 **Option 2: Local Installation**
 
@@ -71,10 +90,24 @@ npm install
 npm run build
 ```
 
-Then add to Claude Desktop config using the local path or by specifying the path with the `GOOGLE_OAUTH_CREDENTIALS` environment variable.
+Then add to Claude Desktop config using the local path or by specifying credentials with the `GOOGLE_OAUTH_CREDENTIALS` or `GOOGLE_OAUTH_CREDENTIALS_JSON` environment variable.
 
 **Option 3: Docker Installation**
 
+**Using JSON environment variable (recommended):**
+```bash
+git clone https://github.com/nspady/google-calendar-mcp.git
+cd google-calendar-mcp
+
+# Add credentials to .env file
+echo 'GOOGLE_OAUTH_CREDENTIALS_JSON={"installed":{"client_id":"your-id","client_secret":"your-secret","redirect_uris":["http://localhost:3500/oauth2callback"]}}' >> .env
+
+# Update docker-compose.yml to remove file mount (comment out the gcp-oauth.keys.json volume line)
+
+docker compose up
+```
+
+**Using file mount (traditional):**
 ```bash
 git clone https://github.com/nspady/google-calendar-mcp.git
 cd google-calendar-mcp

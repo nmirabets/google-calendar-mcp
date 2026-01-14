@@ -81,7 +81,18 @@ export interface OAuthCredentialsWithProject {
 // Returns undefined if credentials file doesn't exist, is invalid, or missing project_id
 export function getCredentialsProjectId(): string | undefined {
   try {
-    // Use existing helper to get credentials file path
+    // Priority 1: Check JSON env var first
+    const envJson = process.env.GOOGLE_OAUTH_CREDENTIALS_JSON;
+    if (envJson) {
+      const credentials: OAuthCredentialsWithProject = JSON.parse(envJson);
+      if (credentials.installed?.project_id) {
+        return credentials.installed.project_id;
+      } else if (credentials.project_id) {
+        return credentials.project_id;
+      }
+    }
+    
+    // Priority 2: Fall back to file-based credentials
     const credentialsPath = getKeysFilePath();
 
     if (!fs.existsSync(credentialsPath)) {
@@ -110,11 +121,15 @@ export function generateCredentialsErrorMessage(): string {
   return `
 OAuth credentials not found. Please provide credentials using one of these methods:
 
-1. Environment variable:
+1. Environment variable (JSON string):
+   Set GOOGLE_OAUTH_CREDENTIALS_JSON with the JSON content:
+   export GOOGLE_OAUTH_CREDENTIALS_JSON='{"installed":{"client_id":"...","client_secret":"...","redirect_uris":["..."]}}'
+
+2. Environment variable (file path):
    Set GOOGLE_OAUTH_CREDENTIALS to the path of your credentials file:
    export GOOGLE_OAUTH_CREDENTIALS="/path/to/gcp-oauth.keys.json"
 
-2. Default file path:
+3. Default file path:
    Place your gcp-oauth.keys.json file in the package root directory.
 
 Token storage:

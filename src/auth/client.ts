@@ -2,6 +2,31 @@ import { OAuth2Client } from 'google-auth-library';
 import * as fs from 'fs/promises';
 import { getKeysFilePath, generateCredentialsErrorMessage, OAuthCredentials } from './utils.js';
 
+async function loadCredentialsFromEnv(): Promise<OAuthCredentials | null> {
+  const envJson = process.env.GOOGLE_OAUTH_CREDENTIALS_JSON;
+  if (!envJson) {
+    return null;
+  }
+  
+  try {
+    const keys = JSON.parse(envJson);
+    // Handle both formats: installed.* and direct client_id/client_secret
+    if (keys.installed) {
+      const { client_id, client_secret, redirect_uris } = keys.installed;
+      return { client_id, client_secret, redirect_uris };
+    } else if (keys.client_id && keys.client_secret) {
+      return {
+        client_id: keys.client_id,
+        client_secret: keys.client_secret,
+        redirect_uris: keys.redirect_uris || ['http://localhost:3000/oauth2callback']
+      };
+    }
+    throw new Error('Invalid JSON format in GOOGLE_OAUTH_CREDENTIALS_JSON');
+  } catch (error) {
+    throw new Error(`Failed to parse GOOGLE_OAUTH_CREDENTIALS_JSON: ${error instanceof Error ? error.message : error}`);
+  }
+}
+
 async function loadCredentialsFromFile(): Promise<OAuthCredentials> {
   const keysContent = await fs.readFile(getKeysFilePath(), "utf-8");
   const keys = JSON.parse(keysContent);
@@ -23,7 +48,13 @@ async function loadCredentialsFromFile(): Promise<OAuthCredentials> {
 }
 
 async function loadCredentialsWithFallback(): Promise<OAuthCredentials> {
-  // Load credentials from file (CLI param, env var, or default path)
+  // Priority 1: JSON from environment variable
+  const envCreds = await loadCredentialsFromEnv();
+  if (envCreds) {
+    return envCreds;
+  }
+  
+  // Priority 2: File path (CLI param, env var, or default path)
   try {
     return await loadCredentialsFromFile();
   } catch (fileError) {

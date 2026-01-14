@@ -34,6 +34,67 @@ docker compose exec calendar-mcp npm run auth
 # 5. Add to Claude Desktop config (see stdio Mode section below)
 ```
 
+## Credentials Configuration Options
+
+You can provide OAuth credentials to the Docker container using one of two methods:
+
+### Option 1: JSON Environment Variable (Recommended for Docker)
+
+**Advantages:**
+- No file mounting needed
+- Works seamlessly with secrets management systems (Kubernetes secrets, Docker secrets, etc.)
+- Simpler Docker Compose configuration
+- More secure (credentials not stored in filesystem)
+
+**Setup:**
+
+1. Add your credentials as a JSON string in your `.env` file:
+
+```bash
+# In .env file
+GOOGLE_OAUTH_CREDENTIALS_JSON='{"installed":{"client_id":"your-client-id.apps.googleusercontent.com","client_secret":"your-secret","redirect_uris":["http://localhost:3500/oauth2callback"]}}'
+```
+
+2. Update `docker-compose.yml` to remove the credentials file mount:
+
+```yaml
+services:
+  calendar-mcp:
+    build: .
+    container_name: calendar-mcp
+    restart: unless-stopped
+    
+    env_file: .env
+    
+    # OAuth credentials via environment variable - no file mount needed!
+    volumes:
+      # Remove or comment out: - ./gcp-oauth.keys.json:/app/gcp-oauth.keys.json:ro
+      - calendar-tokens:/home/nodejs/.config/google-calendar-mcp
+```
+
+3. Build and start:
+
+```bash
+docker compose up -d
+docker compose exec calendar-mcp npm run auth
+```
+
+**Alternative format (direct, without "installed" wrapper):**
+
+```bash
+GOOGLE_OAUTH_CREDENTIALS_JSON='{"client_id":"your-client-id.apps.googleusercontent.com","client_secret":"your-secret","redirect_uris":["http://localhost:3500/oauth2callback"]}'
+```
+
+### Option 2: File Mount (Traditional)
+
+Mount the credentials file as shown in the Quick Start section above. This method is simpler for local development where you already have the credentials file.
+
+```yaml
+volumes:
+  - ./gcp-oauth.keys.json:/app/gcp-oauth.keys.json:ro
+  - calendar-tokens:/home/nodejs/.config/google-calendar-mcp
+```
+
 ## Two Modes
 
 The server supports two transport modes: **stdio** (for local Claude Desktop) and **HTTP** (for local development/testing).
@@ -68,6 +129,28 @@ Add to your Claude Desktop config file:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+**Option A: Using JSON Environment Variable (Recommended)**
+
+```json
+{
+  "mcpServers": {
+    "google-calendar": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--env", "GOOGLE_OAUTH_CREDENTIALS_JSON={\"installed\":{\"client_id\":\"your-client-id\",\"client_secret\":\"your-secret\",\"redirect_uris\":[\"http://localhost:3500/oauth2callback\"]}}",
+        "--mount", "type=volume,src=google-calendar-mcp_calendar-tokens,dst=/home/nodejs/.config/google-calendar-mcp",
+        "calendar-mcp"
+      ]
+    }
+  }
+}
+```
+
+**⚠️ Important**: Replace the JSON credentials with your actual OAuth credentials. Make sure to escape quotes properly in the JSON config.
+
+**Option B: Using File Mount (Traditional)**
 
 ```json
 {
