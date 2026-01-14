@@ -132,9 +132,10 @@ OAuth credentials not found. Please provide credentials using one of these metho
 3. Default file path:
    Place your gcp-oauth.keys.json file in the package root directory.
 
-Token storage:
-- Tokens are saved to: ${getSecureTokenPath()}
-- To use a custom token location, set GOOGLE_CALENDAR_MCP_TOKEN_PATH environment variable
+Token storage options:
+- Default: Tokens saved to ${getSecureTokenPath()}
+- Custom file: Set GOOGLE_CALENDAR_MCP_TOKEN_PATH environment variable
+- JSON env var: Set GOOGLE_CALENDAR_MCP_TOKENS_JSON with token JSON (for serverless/headless deployments)
 
 To get OAuth credentials:
 1. Go to the Google Cloud Console (https://console.cloud.google.com/)

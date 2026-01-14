@@ -88,6 +88,29 @@ export class TokenManager {
   }
 
   private async loadMultiAccountTokens(): Promise<MultiAccountTokens> {
+    // Priority 1: Check for tokens from environment variable
+    const envTokens = process.env.GOOGLE_CALENDAR_MCP_TOKENS_JSON;
+    if (envTokens) {
+      try {
+        const parsed = JSON.parse(envTokens);
+        
+        // Check if this is the old single-account format
+        if (parsed.access_token || parsed.refresh_token) {
+          // Convert old format to new multi-account format
+          return {
+            normal: parsed
+          };
+        }
+        
+        // Already in multi-account format
+        return parsed as MultiAccountTokens;
+      } catch (error) {
+        process.stderr.write(`Warning: Failed to parse GOOGLE_CALENDAR_MCP_TOKENS_JSON: ${error}\n`);
+        // Fall through to file-based loading
+      }
+    }
+    
+    // Priority 2: Load from file
     try {
       const fileContent = await fs.readFile(this.tokenPath, "utf-8");
       const parsed = JSON.parse(fileContent);
